@@ -126,7 +126,7 @@ class MOTdata():
         Magnetic field value.
     BN_vals : list
         List of detuning values.
-    D_L : float
+    BN_L : float
         Detuning limit.
     color_palette : list
         Color palette for plotting.
@@ -151,7 +151,7 @@ class MOTdata():
     dGamma : float
         Error in FWHM of the Lorentzian.
     """
-    def __init__(self, Date: str, B: float, BN_vals: list, D_L: float):
+    def __init__(self, Date: str, B: float, BN_vals: list, BN_L: float):
         """
         Initialize the MOTdata class.
 
@@ -162,14 +162,14 @@ class MOTdata():
         B : float
             Magnetic field value.
         BN_vals : list
-            List of detuning values.
-        D_L : float
-            Detuning limit.
+            List of beat-note values used for fluorescence.
+        BN_L : float
+            Beat-note value used for loading.
         """
         self.Date = Date
         self.B = B
         self.BN_vals = BN_vals
-        self.D_L = D_L
+        self.BN_L = BN_L
         self.color_palette = color_palette = plt.cm.jet(np.linspace(0.6, 1, len(self.BN_vals)))
         
         self.DATA_RAW = []
@@ -249,7 +249,7 @@ class MOTdata():
             
             delta_time = 0.00015
             
-            if D < self.D_L:
+            if D < self.BN_L:
                 # select data where diff is max
                 index_photo = np.argmax(y_diff)
             else:
@@ -337,7 +337,7 @@ class MOTdata():
         
         Na_mean, Na_std = np.average(Na, weights=1/dNa**2), np.sum(1/dNa**2)**-0.5
           
-        print(f'Number of atoms = ({Na_mean/1e7:.2e} {pm} {Na_std/1e7:.2e}) * 10^7')
+        print(f'Number of atoms = ({Na_mean/1e7:.2f} {pm} {Na_std/1e7:.2f}) * 10^7')
     
     def PlotRawData(self):
         """
