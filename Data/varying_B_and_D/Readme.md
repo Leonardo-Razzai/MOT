@@ -1,3 +1,10 @@
+# MOT Data varying magnetic field and detuning
+This folder contains data regarding the fluorescence of atoms trapped in a MOT while it is loaded at a certain detuning set by Cooler beat-note at loading (`BN_L`). While MOT is loaded, at a certain time Cooler beat-note is chenaged to values (one for each loading run) called `BN_vals`.
+With this data we can get:
+- The Lorentzian shape of the fluorescence of atoms in the MOT at different detunings (set by `BN_vals`);
+- Determine the exact value of the beat-note corresponding to resonance `BN0`
+- The number of atoms captured in the MOT at detuning set by `BN_L` ;
+- The trend of the FWHM of the fluorescence curve at different magnetic fields `B` 
 # AnMOT.py
 
 This script is designed to handle and analyze data of photoemission of atoms loaded in a Magneto-Optical Trap (MOT). The main functionalities of the `MOTdata` class include:
@@ -30,13 +37,13 @@ from AnMOT import MOTdata
 
 ### Initializing the MOTdata Class
 
-Create an instance of the `MOTdata` class by providing the date, magnetic field value, list of detuning values, and detuning limit:
+Create an instance of the `MOTdata` class by providing the date, magnetic field value, list of beat-note values, and beat-note used for MOT loading:
 
 ```python
 date = "2023-10-01"
 B = 1.0 # magnetic field in A
-BN_vals = [1000, 1020, 1040, 1060] # Cooler beat-notes for photo
-D_L = 1030 # Cooler beat-note for mot loading
+BN_vals = [1000, 1020, 1040, 1060] # Cooler beat-notes for photo in MHz
+BN_L = 1036 # Cooler beat-note for mot loading in MHz
 
 mot_data = MOTdata(date, B, Dvals, D_L)
 ```
