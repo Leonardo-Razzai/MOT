@@ -1,0 +1,5 @@
+Measurement parameters
+- Master locked at 3'-4' crossover
+- BN_L = 1036 MHz (loading beat-note cooler)
+- Cooler BN is scanned from 1015 MHz to 1049 MHz with step 2 MHz
+- Magentic field B is scanned from 5 to 7 A.
