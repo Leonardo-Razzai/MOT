@@ -96,7 +96,7 @@ def NumOfAtoms(V0, dV0, Delta, Gamma):
     eta = 0.5 # A/W 10 % error
     R_lens = 2 # cm
     dist_mot = 40 # cm
-    sigma = np.pi * (R_lens/dist_mot)**2
+    fractional_sigma = 0.25 * (R_lens/dist_mot)**2
     
     I = V0 / tau # A
     P = I / eta # W
@@ -109,7 +109,7 @@ def NumOfAtoms(V0, dV0, Delta, Gamma):
     dsigma_rel = 2 * ddist_mot_rel
     
     Rs = Prob_photoemission(Delta, s0, Gamma) * Decay_rate # Hz
-    Na = P / (sigma * Rs * Ep)
+    Na = P / (fractional_sigma * Rs * Ep)
     dNa = (dV0_rel + dtau_rel + deta_rel + dsigma_rel) * Na
     
     return (Na, dNa)
