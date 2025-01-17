@@ -114,7 +114,7 @@ def NumOfAtoms(V0, dV0, Delta, Gamma):
     
     return (Na, dNa)
 
-class MOTdata():
+class MOTdata_Lorentzian():
     """
     Class to handle MOT data.
 
@@ -127,7 +127,7 @@ class MOTdata():
     BN_vals : list
         List of detuning values.
     BN_L : float
-        Detuning limit.
+        Beat-note value used for loading.
     color_palette : list
         Color palette for plotting.
     DATA_RAW : list
@@ -170,7 +170,7 @@ class MOTdata():
         self.B = B
         self.BN_vals = BN_vals
         self.BN_L = BN_L
-        self.color_palette = color_palette = plt.cm.jet(np.linspace(0.6, 1, len(self.BN_vals)))
+        self.color_palette = plt.cm.jet(np.linspace(0.6, 1, len(self.BN_vals)))
         
         self.DATA_RAW = []
         self.ERRORS = []
@@ -417,3 +417,243 @@ class MOTdata():
             'dGamma [MHz]': [self.dGamma],
         })
         df.to_csv(f'Lorentzian_params_B={self.B}.csv')
+        
+        
+        
+class MOTdata_Loading():
+    """
+    Class to handle MOT data.
+
+    Attributes
+    ----------
+    Date : str
+        Date of the data.
+    B : float
+        Magnetic field value.
+    BN_res : float
+        Beat-note value at resonance.
+    BN_L_vals : list
+        List of beat-note values used for loading.
+    color_palette : list
+        Color palette for plotting.
+    DATA_RAW : list
+        Raw data.
+    ERRORS : list
+        Errors in the data.
+    PHOTOEMISSION_VALS : list
+        Photoemission values.
+    PHOTOEMISSION_TIMES : list
+        Photoemission times.
+    V0 : float
+        Amplitude of the Lorentzian.
+    BN0 : float
+        Cooler beat-note frequency at resonance.
+    Gamma : float
+        FWHM of the Lorentzian.
+    dV0 : float
+        Error in amplitude of the Lorentzian.
+    dBN0 : float
+        Error in cooler beat-note frequency at resonance.
+    dGamma : float
+        Error in FWHM of the Lorentzian.
+    """
+    def __init__(self, Date: str, B: float, BN_L_vals: list, BN_res: float):
+        """
+        Initialize the MOTdata class.
+
+        Parameters
+        ----------
+        Date : str
+            Date of the data.
+        B : float
+            Magnetic field value.
+        BN_res : float
+            Beat-note value at resonance.
+        BN_L_vals : list
+            List of beat-note values used for loading.
+        """
+        self.Date = Date
+        self.B = B
+        self.BN_res = BN_res
+        self.BN_L_vals = BN_L_vals
+        self.color_palette = plt.cm.jet(np.linspace(0.6, 1, len(self.BN_L_vals)))
+        
+        self.DATA_RAW = []
+        self.ERRORS = []
+        self.PHOTOEMISSION_VALS = []
+        self.PHOTOEMISSION_TIMES = []
+        
+        self.V0, self.BN0, self.Gamma = (0, 0, 0)
+        self.dV0, self.dBN0, self.dGamma = (0, 0, 0)
+        
+    def ImportData(self):
+        """
+        Import data from CSV files.
+        """
+        directory = Path(f'./{self.Date}/')
+        
+        self.DATA_RAW = []
+        self.ERRORS = []
+        
+        for i, D in enumerate(self.BN_L_vals):
+            file_list = list(directory.glob(f"B={self.B}_D={D}.csv"))
+            df = pd.read_csv(file_list[0], header=1, names=['Time [s]', 'Sig [V]'])
+            
+            x_data = df['Time [s]'].to_numpy()
+            x_data = x_data - np.min(x_data)
+            index_offset = (x_data > 0.0) * (x_data < 0.8)
+            y_data = df['Sig [V]'].to_numpy()
+            offset = np.mean(y_data[index_offset])
+            
+            y_data = y_data - offset
+            dy_data = np.std(y_data[index_offset])
+            
+            self.DATA_RAW.append((x_data, y_data))
+            self.ERRORS.append(dy_data)
+    
+    def SelectData(self, tmin = 3.8, tmax = 3.9, plot = False):
+        """
+        Select data within a specified time range.
+
+        Parameters
+        ----------
+        tmin : float, optional
+            Minimum time value, by default 3.8.
+        tmax : float, optional
+            Maximum time value, by default 3.9.
+        plot : bool, optional
+            Whether to plot the data, by default False.
+        """
+        self.PHOTOEMISSION_VALS = []
+        self.PHOTOEMISSION_TIMES = []
+        
+        if plot:
+            _, ax = plt.subplots(1, 2, figsize=(12, 5))
+
+            ax[0].set_title(f'Derivative of MOT fluorescence', fontdict=title_font)
+            ax[0].set_xlabel('Time [ms]', fontdict=base_font)
+            ax[0].set_ylabel('Sig [V]', fontdict=base_font)
+            ax[0].grid()
+            
+            ax[1].set_title(f'MOT fluorescence: zoom about peaks', fontdict=title_font)
+            ax[1].set_xlabel('Time [ms]', fontdict=base_font)
+            ax[1].set_ylabel('Sig [V]', fontdict=base_font)
+            ax[1].grid()
+
+        for i, D in enumerate(self.BN_L_vals):
+            
+            x_data = self.DATA_RAW[i][0]
+            y_data = self.DATA_RAW[i][1]
+            
+            index_diff = (x_data > tmin) * (x_data < tmax)
+            x_diff = x_data[index_diff][:-1]
+            y_diff = np.diff(y_data[index_diff])
+            
+            if plot:
+                ax[0].plot(x_diff * 1e3, y_diff, label=f'D = {D} MHz', color=self.color_palette[i])  
+            
+            delta_time = 0.00015
+            
+            index_photo = np.argmax(y_diff)
+
+            x_photo = x_diff[index_photo]
+            
+            index_interval = (x_data > x_photo + delta_time) * (x_data < x_photo + 2*delta_time)
+            x_interval = x_data[index_interval] - x_photo
+            y_interval = y_data[index_interval]
+            
+            x_picked = np.mean(x_interval)
+            y_picked = np.mean(y_interval)
+            
+            self.PHOTOEMISSION_TIMES.append(x_picked)
+            self.PHOTOEMISSION_VALS.append(y_picked)
+            self.ERRORS[i] = self.ERRORS[i] + np.std(y_interval)
+            
+            if plot:
+                
+                index_plot = (x_data > x_photo - 50*delta_time) * (x_data < x_photo + 50*delta_time)
+                x_plot = x_data[index_plot] - x_photo
+                y_plot = y_data[index_plot]
+            
+                ax[1].plot(x_plot * 1e3, y_plot, color=self.color_palette[i])
+                ax[1].plot([x_picked * 1e3], [y_picked], '+', color='royalblue')
+
+        if plot:
+            ax[1].plot([x_picked * 1e3], [y_picked], '+', color='royalblue', label='Peaks')
+            #plt.legend(prop=base_font)
+            plt.show()
+    
+    def Plot_maxima_fluorescence(self):
+        """
+        Plot the fluorescence value at resonance for different loading detunings.
+        """
+        _, ax = plt.subplots(1, 1, figsize=(12, 5))
+        ax.set_title(f'MOT fluorescence signal at resonance, B = {self.B} A', fontdict=title_font)
+
+        ax.errorbar(self.BN_L_vals, self.PHOTOEMISSION_VALS, yerr=self.ERRORS, fmt='o', ms=4, color='royalblue')
+        ax.set_xlabel(r'$\Delta_L$ (MHz)', fontdict=base_font)
+        ax.set_ylabel('Sig [V]', fontdict=base_font)
+
+        plt.grid()
+        plt.show()
+    
+    def PlotRawData(self):
+        """
+        Plot the raw data.
+        """
+        _, ax = plt.subplots(1, 1, figsize=(12, 5))
+        ax.set_title(f'MOT fluorescence signal B = {self.B} A', fontdict=title_font)
+
+        for i, D in enumerate(self.BN_L_vals):
+          
+            x_data = self.DATA_RAW[i][0]
+            y_data = self.DATA_RAW[i][1]
+            
+            ax.plot(x_data, y_data, color=self.color_palette[i])
+            ax.set_xlabel('Time [s]', fontdict=base_font)
+            ax.set_ylabel('Sig [V]', fontdict=base_font)
+
+        plt.grid()
+        plt.show()
+    
+    def PlotRawData_zoom(self, tmin = 3.8, tmax = 3.9):
+        """
+        Plot the raw data within a specified time range.
+
+        Parameters
+        ----------
+        tmin : float, optional
+            Minimum time value, by default 3.8.
+        tmax : float, optional
+            Maximum time value, by default 3.9.
+        """
+        _, ax = plt.subplots(1, 1, figsize=(12, 5))
+        ax.set_title(f'MOT fluorescence at different detunings : zoom', fontdict=title_font)
+
+        for i, D in enumerate(self.BN_L_vals):
+            
+            x_data = self.DATA_RAW[i][0]
+            y_data = self.DATA_RAW[i][1]
+            
+            index_to_plot = (x_data > tmin) * (x_data < tmax)
+            ax.plot(x_data[index_to_plot], y_data[index_to_plot], color=self.color_palette[i])
+            ax.set_xlabel('Time [s]', fontdict=base_font)
+            ax.set_ylabel('Sig [V]', fontdict=base_font)
+
+        plt.grid()
+        plt.show()
+    
+    def SaveData_fluorescence(self):
+        """
+        Save the photoemission data to a CSV file.
+        """
+        if len(self.PHOTOEMISSION_VALS) == 0:
+            print('No data to save')
+            return
+        
+        df = pd.DataFrame({
+            'BN_cooler [MHz]': self.BN_L_vals,
+            'PhotoEm [V]': self.PHOTOEMISSION_VALS,
+            'Error [V]': self.ERRORS,
+        })
+        df.to_csv(self.Date + f'Photoemission_Data_B={self.B}.csv')
