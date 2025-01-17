@@ -92,7 +92,7 @@ def NumOfAtoms(V0, dV0, Delta, Gamma):
     Decay_rate = 38.11 * 1e6 # Hz
     Ep = 1.589 * 1.602 * 1e-19 # J
     
-    tau = 2.38 *1e6 # V/A 5% error
+    tau = 4.75 *1e6 # V/A 5% error
     eta = 0.5 # A/W 10 % error
     R_lens = 2 # cm
     dist_mot = 40 # cm
@@ -105,7 +105,7 @@ def NumOfAtoms(V0, dV0, Delta, Gamma):
     dV0_rel = dV0/V0
     dtau_rel = 0.05
     deta_rel = 0.1
-    ddist_mot_rel = 2 / 40
+    ddist_mot_rel = 1 / 40
     dsigma_rel = 2 * ddist_mot_rel
     
     Rs = Prob_photoemission(Delta, s0, Gamma) * Decay_rate # Hz
@@ -337,7 +337,7 @@ class MOTdata_Lorentzian():
         
         Na_mean, Na_std = np.average(Na, weights=1/dNa**2), np.sum(1/dNa**2)**-0.5
           
-        print(f'Number of atoms = ({Na_mean/1e7:.2f} {pm} {Na_std/1e7:.2f}) * 10^7')
+        print(f'Number of atoms = ({Na_mean/1e8:.2f} {pm} {Na_std/1e8:.2f}) * 10^8')
     
     def PlotRawData(self):
         """
