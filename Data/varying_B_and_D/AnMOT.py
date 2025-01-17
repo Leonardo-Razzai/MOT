@@ -511,16 +511,16 @@ class MOTdata_Loading():
             self.DATA_RAW.append((x_data, y_data))
             self.ERRORS.append(dy_data)
     
-    def SelectData(self, tmin = 3.8, tmax = 3.9, plot = False):
+    def SelectData(self, tmin = 4.9, tmax = 5.1, N_conv = 4, plot = False):
         """
         Select data within a specified time range.
 
         Parameters
         ----------
         tmin : float, optional
-            Minimum time value, by default 3.8.
+            Minimum time value, by default 4.9.
         tmax : float, optional
-            Maximum time value, by default 3.9.
+            Maximum time value, by default 5.1.
         plot : bool, optional
             Whether to plot the data, by default False.
         """
@@ -547,39 +547,37 @@ class MOTdata_Loading():
             
             index_diff = (x_data > tmin) * (x_data < tmax)
             x_diff = x_data[index_diff][:-1]
-            y_diff = np.diff(y_data[index_diff])
+            y_diff = np.convolve(np.diff(y_data[index_diff]), np.ones(2*N_conv + 1)/(2*N_conv + 1), mode='valid')
             
             if plot:
-                ax[0].plot(x_diff * 1e3, y_diff, label=f'D = {D} MHz', color=self.color_palette[i])  
+                ax[0].plot(x_diff[N_conv:-N_conv] * 1e3, y_diff, label=f'D = {D} MHz', color=self.color_palette[i])  
             
-            delta_time = 0.00015
+            delta_time = 0.001
             
-            index_photo = np.argmax(y_diff)
-
-            x_photo = x_diff[index_photo]
+            index_decay = np.argmin(np.concat([np.zeros(N_conv), y_diff]))
+            x_decay = x_diff[index_decay]
             
-            index_interval = (x_data > x_photo + delta_time) * (x_data < x_photo + 2*delta_time)
-            x_interval = x_data[index_interval] - x_photo
+            index_interval = (x_data > x_decay - 2 * delta_time) * (x_data < x_decay)
             y_interval = y_data[index_interval]
+            x_interval = x_data[index_interval]
             
-            x_picked = np.mean(x_interval)
-            y_picked = np.mean(y_interval)
+            x_picked = x_interval[np.argmax(y_interval)]
+            y_picked = np.max(y_interval)
             
             self.PHOTOEMISSION_TIMES.append(x_picked)
             self.PHOTOEMISSION_VALS.append(y_picked)
-            self.ERRORS[i] = self.ERRORS[i] + np.std(y_interval)
             
             if plot:
                 
-                index_plot = (x_data > x_photo - 50*delta_time) * (x_data < x_photo + 50*delta_time)
-                x_plot = x_data[index_plot] - x_photo
+                index_plot = (x_data > x_decay - 10*delta_time) * (x_data < x_decay + 10*delta_time)
+                x_plot = x_data[index_plot] - x_picked
                 y_plot = y_data[index_plot]
             
                 ax[1].plot(x_plot * 1e3, y_plot, color=self.color_palette[i])
-                ax[1].plot([x_picked * 1e3], [y_picked], '+', color='royalblue')
+                ax[1].plot([0], [y_picked], '+', color='royalblue')
 
         if plot:
-            ax[1].plot([x_picked * 1e3], [y_picked], '+', color='royalblue', label='Peaks')
+            ax[1].plot([0], [y_picked], '+', color='royalblue', label='Peaks')
             #plt.legend(prop=base_font)
             plt.show()
     
