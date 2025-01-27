@@ -1,7 +1,7 @@
 ## Measure Settings
 $\Delta_L$ : $BN_{Cooler}$ = 1042 MHz
 $\Delta_F$ : $BN_{Cooler}$ = 999.5 - 1050 MHz, step = 2.5 MHz
-I = 5 A
+I = 8 A
 
 With 1 m fiber
 

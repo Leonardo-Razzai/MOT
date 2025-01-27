@@ -5,3 +5,4 @@
 .venv/Lib/site-packages/*
 !.venv/Lib/site-packages/MOTLib/
 !.venv/Lib/site-packages/MOTLib/AnMOT.py
+.venv/Lib/site-packages/MOTLib/__pycache__/AnMOT.cpython-313.pyc
