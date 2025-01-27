@@ -1,1 +1,7 @@
-Data/varying_B_and_D/__pycache__/AnMOT.cpython-313.pyc
+.venv/Include
+.venv/Scripts
+.venv/share
+.venv/pyvenv.cfg
+.venv/Lib/site-packages/*
+!.venv/Lib/site-packages/MOTLib/
+!.venv/Lib/site-packages/MOTLib/AnMOT.py
